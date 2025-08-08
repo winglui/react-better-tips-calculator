@@ -133,7 +133,7 @@ const Main = () => {
       </div>
 
       {billValue.billAmount > 0 && (
-        <div className="flex mt-5 gap-3">
+        <div className="flex flex-wrap mt-5 gap-3">
           <Button className="" variant="contained" onClick={roundDown}>
             <ArrowCircleUpIcon /> Round Down
           </Button>
