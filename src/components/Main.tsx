@@ -1,8 +1,8 @@
-import { Button, Slider, TextField } from "@mui/material";
+import { Button, IconButton, Slider, TextField } from "@mui/material";
 import ArrowCircleUpIcon from "@mui/icons-material/ArrowCircleUp";
 import ArrowCircleDownIcon from "@mui/icons-material/ArrowCircleDown";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import { useState } from "react";
 
 const INITIAL_VALUE = {
@@ -134,24 +134,38 @@ const Main = () => {
 
       {billValue.billAmount > 0 && (
         <div className="flex flex-wrap mt-5 gap-3">
-          <Button className="" variant="contained" onClick={roundDown}>
-            <ArrowCircleUpIcon /> Round Down
-          </Button>
-          <Button className="" variant="contained" onClick={roundUp}>
-            <ArrowCircleDownIcon /> Round Up
+          <Button
+            className=""
+            variant="outlined"
+            size="small"
+            aria-label="Round Down"
+            onClick={roundDown}
+            startIcon={<ArrowCircleDownIcon />}
+          >
+            Round Down
           </Button>
           <Button
             className=""
-            variant="text"
+            variant="outlined"
+            aria-label="Round Up"
+            size="small"
+            onClick={roundUp}
+            startIcon={<ArrowCircleUpIcon />}
+          >
+            Round Up
+          </Button>
+          <IconButton
+            aria-label="Add person to split the bill"
+            color="secondary"
             onClick={() =>
               setBillValue((prev) => ({ ...prev, showGroup: !prev.showGroup }))
             }
           >
-            <GroupAddIcon />
-          </Button>
-          <Button className="" variant="text" onClick={reset}>
+            <GroupAddOutlinedIcon />
+          </IconButton>
+          <IconButton aria-label="Reset" color="primary" onClick={reset}>
             <RestartAltIcon />
-          </Button>
+          </IconButton>
         </div>
       )}
 
