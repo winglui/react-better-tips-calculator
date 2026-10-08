@@ -14,10 +14,13 @@ const INITIAL_VALUE = {
   split: 1,
 };
 
+// Keep the current tip % when there's no bill to derive it from (avoids NaN/Infinity).
+function tipPercentFor(tipAmount: number, billAmount: number, fallback: number) {
+  return billAmount > 0 ? (tipAmount / billAmount) * 100 : fallback;
+}
+
 const Main = () => {
   const [billValue, setBillValue] = useState(() => INITIAL_VALUE);
-
-  console.log(billValue);
 
   function handleBillAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
     const value = +e.target.value;
@@ -45,7 +48,11 @@ const Main = () => {
 
     setBillValue((prev) => ({
       ...prev,
-      tipPercent: (newTipAmountValue / prev.billAmount) * 100,
+      tipPercent: tipPercentFor(
+        newTipAmountValue,
+        prev.billAmount,
+        prev.tipPercent
+      ),
       tipAmount: newTipAmountValue,
       totalAmount: prev.billAmount + newTipAmountValue,
     }));
@@ -73,7 +80,7 @@ const Main = () => {
       billValue.tipAmount - (billValue.totalAmount - newTotalAmount);
     setBillValue((prev) => ({
       ...prev,
-      tipPercent: (newTipAmount / prev.billAmount) * 100,
+      tipPercent: tipPercentFor(newTipAmount, prev.billAmount, prev.tipPercent),
       tipAmount: newTipAmount,
       totalAmount: newTotalAmount,
     }));
@@ -177,7 +184,7 @@ const Main = () => {
             aria-label="Split"
             id="split"
             value={billValue.split}
-            min={0}
+            min={1}
             max={20}
             step={1}
             shiftStep={5}
