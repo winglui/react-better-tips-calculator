@@ -23,3 +23,9 @@ This is a single-page React 19 + TypeScript tip calculator built with Vite.
 - `Header.tsx` only displays the app bar. `App.tsx` places `Header` and `Main` inside an MUI `Container maxWidth="sm"`.
 
 - Any code that derives `tipPercent` from a tip amount should go through `tipPercentFor()`. It keeps the current percentage when `billAmount` is 0 instead of dividing by zero.
+
+## Android copy: keep in sync
+
+`/Users/wlui/Documents/workingfolder/claude/better-tips-calculator-android` is a Capacitor Android copy of this app. **Every change made here must also be applied there**, including `src/`, `public/`, styling, dependencies and the docs in this file.
+- Apply changes by hand or as a patch. Don't overwrite the Android copy's files wholesale, because some files differ there on purpose: `src/main.tsx` (bundled Roboto imports and the status bar setup), `index.html` (no Google Fonts links), the number `TextField`s in `src/components/Main.tsx` (`inputMode: "decimal"`), and `package.json` (Capacitor dependencies and `android:*` scripts).
+- Afterwards, run `npm run lint` and `npm run android:sync` in the Android copy.
