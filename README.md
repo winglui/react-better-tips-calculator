@@ -40,6 +40,19 @@ Then open the URL Vite prints (usually http://localhost:5173).
 | `npm run build` | Type-check and build for production into `dist/` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run the end-to-end tests |
+
+## Tests
+
+The `e2e/` folder has end-to-end tests that use the app in a real (headless) Chrome browser through [Puppeteer](https://pptr.dev/). They run on Node's built-in test runner. Each test file starts its own Vite dev server, so you don't need `npm run dev` running first.
+
+```bash
+npm test                                                     # run every test
+node --test e2e/rounding.test.mjs                            # run one file
+node --test --test-name-pattern="Round Up" e2e/*.test.mjs    # run tests whose name matches
+```
+
+The first `npm install` downloads a copy of Chrome for Puppeteer (stored in `~/.cache/puppeteer`).
 
 ## How it works
 

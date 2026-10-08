@@ -9,7 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint`: ESLint (flat config in `eslint.config.js`)
 - `npm run preview`: serve the production build
 
-There is no test framework set up yet.
+- `npm test`: end-to-end tests in `e2e/*.test.mjs` (Puppeteer + Node's built-in `node:test`). Each file starts its own Vite dev server on a free port and a headless Chrome, so no dev server needs to be running.
+- Run one file: `node --test e2e/split.test.mjs`. Run a single test by name: `node --test --test-name-pattern="Round Up" e2e/*.test.mjs`.
+
+`e2e/helpers.mjs` has the shared pieces. `setup()` starts the server and browser lazily, on the first test, so a run filtered with `--test-name-pattern` doesn't hang. `appTest()` gives each test a fresh page and fails it on any console error. `readApp()` returns what's displayed (amounts as shown, e.g. `"$59.00"`), and `setBill`, `setTip`, `press`, `setSplit`, `paste` and `wheel` drive the UI. Add a test for every behavior change.
 
 ## Architecture
 
@@ -27,5 +30,5 @@ This is a single-page React 19 + TypeScript tip calculator built with Vite.
 ## Android copy: keep in sync
 
 `/Users/wlui/Documents/workingfolder/claude/better-tips-calculator-android` is a Capacitor Android copy of this app. **Every change made here must also be applied there**, including `src/`, `public/`, styling, dependencies and the docs in this file.
-- Apply changes by hand or as a patch. Don't overwrite the Android copy's files wholesale, because some files differ there on purpose: `src/main.tsx` (bundled Roboto imports and the status bar setup), `index.html` (no Google Fonts links), the money `TextField`s in `src/components/Main.tsx` (`slotProps={{ ...moneySlotProps, htmlInput: { inputMode: "decimal" } }}` there vs `slotProps={moneySlotProps}` here), `package.json` (Capacitor dependencies and `android:*` scripts), and `eslint.config.js` (also ignores `android/`).
+- Apply changes by hand or as a patch. Don't overwrite the Android copy's files wholesale, because some files differ there on purpose: `src/main.tsx` (bundled Roboto imports and the status bar setup), `index.html` (no Google Fonts links), the money `TextField`s in `src/components/Main.tsx` (`slotProps={{ ...moneySlotProps, htmlInput: { inputMode: "decimal" } }}` there vs `slotProps={moneySlotProps}` here), `package.json` (Capacitor dependencies and `android:*` scripts), `eslint.config.js` (also ignores `android/`), and the tests (copy `e2e/` changes across too; the Android copy also has `e2e/android-keypad.test.mjs`, `e2e-android/`, a `test:android` script and a `sharp` dev dependency).
 - Afterwards, run `npm run lint` and `npm run android:sync` in the Android copy.
