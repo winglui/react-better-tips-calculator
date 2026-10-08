@@ -1,69 +1,46 @@
-# React + TypeScript + Vite
+# Better Tips Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A simple tip calculator. Type the bill amount and it instantly works out the tip and the total. You can round the total to a whole dollar and split the bill so everyone's share adds up to the exact cent.
 
-Currently, two official plugins are available:
+**Version 1.0.0**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- **Instant tip and total.** The Bill Amount field has focus when the page loads, so you can start typing straight away. The tip defaults to 18%.
+- **Set the tip your way.** Drag the Tip % slider, or type an exact tip amount and the percentage updates to match.
+- **Round Up / Round Down.** Moves the total to the next or previous whole dollar. If the total is already a whole dollar, each press moves it by $1. Round Down never goes below the bill, so the tip can't go negative.
+- **Split the bill.** Choose 1–20 people. When the total doesn't divide evenly, the leftover cents are shared out, for example "2 pay $19.67, 1 pays $19.66", so the shares always add up to the total.
+- **Dollar amounts.** Totals and shares are formatted as US dollars, for example `$1,234.50`.
+- **Reset** clears everything back to the start.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- [React 19](https://react.dev/) + TypeScript, built with [Vite](https://vite.dev/)
+- [MUI (Material UI) v7](https://mui.com/) components with a dark theme
+- [Tailwind CSS v4](https://tailwindcss.com/) for layout
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Getting started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Requires [Node.js](https://nodejs.org/) 20.19+ or 22.12+ (the versions Vite 7 needs).
+
+```bash
+git clone https://github.com/winglui/react-better-tips-calculator.git
+cd react-better-tips-calculator
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open the URL Vite prints (usually http://localhost:5173).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the dev server with hot reload |
+| `npm run build` | Type-check and build for production into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
+
+## How it works
+
+All the calculator logic is in [`src/components/Main.tsx`](src/components/Main.tsx). React state holds only what the user enters: the bill, the tip percentage, and the split settings. The tip amount and total are calculated from those on every render, with the tip kept to whole cents. Typing a tip amount or rounding the total sets the tip percentage that produces it.
