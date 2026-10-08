@@ -11,11 +11,10 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import { useState } from "react";
 
+// Only user inputs live in state; the tip amount and total are derived from them on each render.
 const INITIAL_VALUE = {
   billAmount: 0,
   tipPercent: 18,
-  tipAmount: 0,
-  totalAmount: 0,
   showGroup: false,
   split: 1,
 };
@@ -60,41 +59,29 @@ const Main = () => {
   // Raw text of the tip field while it's being edited (null = not editing, show the formatted tip).
   const [tipText, setTipText] = useState<string | null>(null);
 
-  function handleBillAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = +e.target.value;
+  // The tip is kept to whole cents, so the total and the split shares add up exactly.
+  const tipAmount = toCents(billValue.billAmount * (billValue.tipPercent / 100));
+  const totalAmount = toCents(billValue.billAmount + tipAmount);
 
-    setBillValue((prev) => ({
-      ...prev,
-      billAmount: value,
-      tipAmount: value * (prev.tipPercent / 100),
-      totalAmount: value + value * (prev.tipPercent / 100),
-    }));
+  function handleBillAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
+    setBillValue((prev) => ({ ...prev, billAmount: +e.target.value }));
   }
 
   function handleTipPercentChanged(_: Event, newValue: number) {
-    const newTipAmount = billValue.billAmount * (newValue / 100);
+    setBillValue((prev) => ({ ...prev, tipPercent: newValue }));
+  }
+
+  // Typing a tip amount (or rounding) sets the tip % that produces it.
+  function setTipAmount(newTipAmount: number) {
     setBillValue((prev) => ({
       ...prev,
-      tipPercent: newValue,
-      tipAmount: newTipAmount,
-      totalAmount: billValue.billAmount + newTipAmount,
+      tipPercent: tipPercentFor(newTipAmount, prev.billAmount, prev.tipPercent),
     }));
   }
 
   function handleTipAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
     setTipText(e.target.value);
-    const newTipAmountValue = +e.target.value;
-
-    setBillValue((prev) => ({
-      ...prev,
-      tipPercent: tipPercentFor(
-        newTipAmountValue,
-        prev.billAmount,
-        prev.tipPercent
-      ),
-      tipAmount: newTipAmountValue,
-      totalAmount: prev.billAmount + newTipAmountValue,
-    }));
+    setTipAmount(+e.target.value);
   }
 
   function handleSplitChanged(_: Event, newValue: number) {
@@ -106,8 +93,9 @@ const Main = () => {
 
   // Round to the nearest whole dollar; if the total is already whole, step $1 instead.
   function roundDown() {
-    const total = toCents(billValue.totalAmount);
-    const newTotalAmount = Number.isInteger(total) ? total - 1 : Math.floor(total);
+    const newTotalAmount = Number.isInteger(totalAmount)
+      ? totalAmount - 1
+      : Math.floor(totalAmount);
     // Never round below the bill (that would make the tip negative).
     if (newTotalAmount >= billValue.billAmount) {
       round(newTotalAmount);
@@ -115,18 +103,11 @@ const Main = () => {
   }
 
   function roundUp() {
-    const total = toCents(billValue.totalAmount);
-    round(Number.isInteger(total) ? total + 1 : Math.ceil(total));
+    round(Number.isInteger(totalAmount) ? totalAmount + 1 : Math.ceil(totalAmount));
   }
 
   function round(newTotalAmount: number) {
-    const newTipAmount = toCents(newTotalAmount - billValue.billAmount);
-    setBillValue((prev) => ({
-      ...prev,
-      tipPercent: tipPercentFor(newTipAmount, prev.billAmount, prev.tipPercent),
-      tipAmount: newTipAmount,
-      totalAmount: newTotalAmount,
-    }));
+    setTipAmount(toCents(newTotalAmount - billValue.billAmount));
   }
 
   function handleOnBillAmountFocus(event: React.FocusEvent<HTMLInputElement>) {
@@ -134,7 +115,7 @@ const Main = () => {
   }
 
   function handleOnTipAmountFocus(event: React.FocusEvent<HTMLInputElement>) {
-    setTipText(billValue.tipAmount.toFixed(2));
+    setTipText(tipAmount.toFixed(2));
     event.target.select();
   }
 
@@ -181,7 +162,7 @@ const Main = () => {
         aria-label="Tip Amount"
         label="Tip Amount"
         variant="standard"
-        value={tipText ?? billValue.tipAmount.toFixed(2)}
+        value={tipText ?? tipAmount.toFixed(2)}
         slotProps={moneySlotProps}
         onFocus={handleOnTipAmountFocus}
         onBlur={() => setTipText(null)}
@@ -189,7 +170,7 @@ const Main = () => {
       />
       <div>
         <p className="label">Total Amount</p>
-        <p>{formatMoney(billValue.totalAmount)}</p>
+        <p>{formatMoney(totalAmount)}</p>
       </div>
 
       {billValue.billAmount > 0 && (
@@ -246,11 +227,11 @@ const Main = () => {
           />
           <div>
             <p className="label">
-              {splitBill(billValue.totalAmount, billValue.split).extra === 0
+              {splitBill(totalAmount, billValue.split).extra === 0
                 ? "Each Pays"
                 : "Shares"}
             </p>
-            <p>{describeShares(billValue.totalAmount, billValue.split)}</p>
+            <p>{describeShares(totalAmount, billValue.split)}</p>
           </div>
         </>
       )}
