@@ -26,6 +26,8 @@ function toCents(amount: number) {
 
 const Main = () => {
   const [billValue, setBillValue] = useState(() => INITIAL_VALUE);
+  // Raw text of the tip field while it's being edited (null = not editing, show the formatted tip).
+  const [tipText, setTipText] = useState<string | null>(null);
 
   function handleBillAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
     const value = +e.target.value;
@@ -49,6 +51,7 @@ const Main = () => {
   }
 
   function handleTipAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
+    setTipText(e.target.value);
     const newTipAmountValue = +e.target.value;
 
     setBillValue((prev) => ({
@@ -99,6 +102,11 @@ const Main = () => {
     event?.target?.select();
   }
 
+  function handleOnTipAmountFocus(event: React.FocusEvent<HTMLInputElement>) {
+    setTipText(billValue.tipAmount.toFixed(2));
+    event.target.select();
+  }
+
   function reset() {
     setBillValue(INITIAL_VALUE);
   }
@@ -111,6 +119,7 @@ const Main = () => {
       </p>
       <TextField
         id="billAmount"
+        autoFocus
         aria-label="Bill Amount"
         label="Bill Amount"
         variant="standard"
@@ -140,7 +149,9 @@ const Main = () => {
         aria-label="Tip Amount"
         label="Tip Amount"
         variant="standard"
-        value={billValue.tipAmount.toFixed(2)}
+        value={tipText ?? billValue.tipAmount.toFixed(2)}
+        onFocus={handleOnTipAmountFocus}
+        onBlur={() => setTipText(null)}
         onChange={handleTipAmountChanged}
       />
       <div>
