@@ -21,6 +21,13 @@ export function setup() {
     ctx.server = server;
     ctx.url = server.resolvedUrls.local[0];
     ctx.browser = await puppeteer.launch();
+    // Warm-up load: after code adds a new import, Vite discovers the dependency on the first page
+    // load and reloads the page. Doing that here keeps it from hitting a test mid-way (which shows up
+    // as "Invalid hook call" errors from two copies of React).
+    const warmup = await ctx.browser.newPage();
+    await warmup.goto(ctx.url, { waitUntil: "networkidle0" });
+    await new Promise((r) => setTimeout(r, 500));
+    await warmup.close();
   };
   after(async () => {
     await ctx.browser?.close();
@@ -64,16 +71,15 @@ export function readApp(page) {
   return page.evaluate(() => {
     const labels = [...document.querySelectorAll("p.label")];
     const label = (start) => labels.find((x) => x.textContent.startsWith(start));
-    const splitLabel = label("Split:");
-    const shareLabel = splitLabel?.nextElementSibling?.nextElementSibling?.querySelector("p.label");
+    const shareLabel = labels.find((x) => x.textContent === "Each Pays" || x.textContent === "Shares");
     return {
       active: document.activeElement?.id || null,
       bill: document.querySelector("#billAmount").value,
       tip: document.querySelector("#tipAmount").value,
       pct: label("Tip %").textContent,
       total: label("Total Amount").nextElementSibling.textContent,
-      buttons: !!document.querySelector('[aria-label="Round Up"]'),
-      split: splitLabel?.textContent ?? null,
+      buttons: !!document.querySelector('[aria-label="Round up"]'),
+      people: document.querySelector("#people").textContent,
       shareLabel: shareLabel?.textContent ?? null,
       shares: shareLabel?.nextElementSibling?.textContent ?? null,
     };
@@ -93,17 +99,18 @@ export async function setTip(page, value) {
   await page.keyboard.type(String(value));
 }
 
-/** Click a button by its aria-label, e.g. "Round Up". */
+/** Click a button by its aria-label, e.g. "Round up". */
 export function press(page, label) {
   return page.click(`[aria-label="${label}"]`);
 }
 
-/** Open the split section (if needed) and set the number of people with the keyboard. */
-export async function setSplit(page, people) {
-  if (!(await page.$('input[aria-label="Split"]'))) await press(page, "Add person to split the bill");
-  await page.focus('input[aria-label="Split"]');
-  await page.keyboard.press("Home");
-  for (let i = 1; i < people; i++) await page.keyboard.press("ArrowRight");
+/** Set the number of people with the People stepper's − / + buttons. */
+export async function setPeople(page, people) {
+  for (;;) {
+    const current = +(await page.$eval("#people", (el) => el.textContent));
+    if (current === people) return;
+    await press(page, current < people ? "Add a person" : "Remove a person");
+  }
 }
 
 /** Set an input's value the way a paste does, and fire an input event. */

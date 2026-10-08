@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appTest, money, press, readApp, setBill, setSplit, setTip, setup } from "./helpers.mjs";
+import { appTest, money, press, readApp, setBill, setPeople, setTip, setup } from "./helpers.mjs";
 
 const ctx = setup();
 
@@ -20,7 +20,7 @@ const cases = [
   ["100", "0", 7, "Shares", "4 pay $14.29, 3 pay $14.28"],
   ["99.99", "0", 20, "Shares", "19 pay $5.00, 1 pays $4.99"],
   ["50", "10", 3, "Each Pays", "$20.00"],
-  ["50", "9", 1, "Each Pays", "$59.00"],
+  ["50", "9", 2, "Each Pays", "$29.50"],
 ];
 
 for (const [bill, tip, people, label, shares] of cases) {
@@ -28,55 +28,75 @@ for (const [bill, tip, people, label, shares] of cases) {
     await setBill(page, bill);
     await setTip(page, tip);
     await page.click("#billAmount");
-    await setSplit(page, people);
+    await setPeople(page, people);
     const s = await readApp(page);
-    assert.equal(s.split, `Split: ${people}`);
+    assert.equal(s.people, String(people));
     assert.equal(s.shareLabel, label);
     assert.equal(s.shares, shares);
     assert.deepEqual(sumShares(s.shares, people), { people, cents: Math.round(money(s.total) * 100) });
   });
 }
 
-appTest(ctx, "the split can't go below 1 person", async (page) => {
+appTest(ctx, "the People stepper is visible before a bill is entered", async (page) => {
+  const s = await readApp(page);
+  assert.equal(s.people, "1");
+  assert.equal(s.shares, null);
+  const disabled = await page.$$eval('[aria-label="Remove a person"], [aria-label="Add a person"]', (buttons) =>
+    buttons.map((b) => b.disabled),
+  );
+  assert.deepEqual(disabled, [true, false]);
+});
+
+appTest(ctx, "the stepper goes from 1 to 20 and its buttons disable at the limits", async (page) => {
   await setBill(page, "100");
-  await setSplit(page, 1);
-  await page.keyboard.press("ArrowLeft");
-  const min = await page.$eval('input[aria-label="Split"]', (i) => [i.min, i.value]);
-  assert.deepEqual(min, ["1", "1"]);
-  assert.equal((await readApp(page)).shares, "$118.00");
+  await setPeople(page, 20);
+  assert.equal(await page.$eval('[aria-label="Add a person"]', (b) => b.disabled), true);
+  await setPeople(page, 1);
+  assert.equal(await page.$eval('[aria-label="Remove a person"]', (b) => b.disabled), true);
+  assert.equal((await readApp(page)).people, "1");
 });
 
-appTest(ctx, "the split toggle opens and closes the split section", async (page) => {
-  await setBill(page, "50");
-  await press(page, "Add person to split the bill");
-  assert.equal((await readApp(page)).split, "Split: 1");
-  await press(page, "Add person to split the bill");
-  assert.equal((await readApp(page)).split, null);
+appTest(ctx, "the stepper works from the keyboard", async (page) => {
+  await setBill(page, "100");
+  await page.focus('[aria-label="Add a person"]');
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
+  assert.equal((await readApp(page)).people, "3");
 });
 
-appTest(ctx, "clearing the bill hides the split section instead of leaving it stuck open", async (page) => {
+appTest(ctx, "shares only show with 2 or more people", async (page) => {
   await setBill(page, "50");
-  await setSplit(page, 3);
+  assert.equal((await readApp(page)).shares, null);
+  await setPeople(page, 2);
+  assert.equal((await readApp(page)).shares, "$29.50");
+  await setPeople(page, 1);
+  assert.equal((await readApp(page)).shares, null);
+});
+
+appTest(ctx, "clearing the bill hides the shares and the round/Reset buttons", async (page) => {
+  await setBill(page, "50");
+  await setPeople(page, 3);
   await setBill(page, "0");
   const s = await readApp(page);
   assert.equal(s.buttons, false);
-  assert.equal(s.split, null, "split section should be hidden when there's no bill");
+  assert.equal(s.shares, null);
+  assert.equal(s.people, "3");
 });
 
-appTest(ctx, "entering a bill again brings the split back with the same number of people", async (page) => {
+appTest(ctx, "entering a bill again shows shares for the same number of people", async (page) => {
   await setBill(page, "50");
-  await setSplit(page, 3);
+  await setPeople(page, 3);
   await setBill(page, "0");
   await setBill(page, "60");
   const s = await readApp(page);
-  assert.equal(s.split, "Split: 3");
+  assert.equal(s.people, "3");
   assert.equal(s.shares, "$23.60"); // $70.80 / 3
 });
 
-appTest(ctx, "rounding updates the split", async (page) => {
+appTest(ctx, "rounding updates the shares", async (page) => {
   await setBill(page, "50");
-  await setSplit(page, 3);
-  await press(page, "Round Up");
+  await setPeople(page, 3);
+  await press(page, "Round up");
   const s = await readApp(page);
   assert.equal(s.total, "$60.00");
   assert.equal(s.shareLabel, "Each Pays");

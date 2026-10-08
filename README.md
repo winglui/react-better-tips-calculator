@@ -9,7 +9,7 @@ A simple tip calculator. Type the bill amount and it instantly works out the tip
 - **Instant tip and total.** The Bill Amount field has focus when the page loads, so you can start typing straight away. The tip defaults to 18%.
 - **Set the tip your way.** Drag the Tip % slider, or type an exact tip amount and the percentage updates to match.
 - **Round Up / Round Down.** Moves the total to the next or previous whole dollar. If the total is already a whole dollar, each press moves it by $1. Round Down never goes below the bill, so the tip can't go negative.
-- **Split the bill.** Choose 1–20 people. When the total doesn't divide evenly, the leftover cents are shared out, for example "2 pay $19.67, 1 pays $19.66", so the shares always add up to the total.
+- **Split the bill.** Use the People − / + buttons (1–20 people). With 2 or more people it shows what each person pays. When the total doesn't divide evenly, the leftover cents are shared out, for example "2 pay $19.67, 1 pays $19.66", so the shares always add up to the total.
 - **Dollar amounts.** Totals and shares are formatted as US dollars, for example `$1,234.50`.
 - **Reset** clears everything back to the start.
 
@@ -56,4 +56,4 @@ The first `npm install` downloads a copy of Chrome for Puppeteer (stored in `~/.
 
 ## How it works
 
-All the calculator logic is in [`src/components/Main.tsx`](src/components/Main.tsx). React state holds only what the user enters: the bill, the tip percentage, and the split settings. The tip amount and total are calculated from those on every render, with the tip kept to whole cents. Typing a tip amount or rounding the total sets the tip percentage that produces it.
+All the calculator logic is in [`src/components/Main.tsx`](src/components/Main.tsx). React state holds only what the user enters: the bill, the tip percentage, and the number of people. The tip amount and total are calculated from those on every render, with the tip kept to whole cents. Typing a tip amount or rounding the total sets the tip percentage that produces it.

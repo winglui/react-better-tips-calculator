@@ -8,6 +8,10 @@ const darkTheme = createTheme({
   palette: {
     mode: "dark",
   },
+  components: {
+    // Sentence-case button text ("Round up") instead of MUI's default ALL CAPS.
+    MuiButton: { styleOverrides: { root: { textTransform: "none" } } },
+  },
 });
 
 createRoot(document.getElementById("root")!).render(

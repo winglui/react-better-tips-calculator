@@ -5,19 +5,24 @@ import {
   Slider,
   TextField,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleUpIcon from "@mui/icons-material/ArrowCircleUp";
 import ArrowCircleDownIcon from "@mui/icons-material/ArrowCircleDown";
+import RemoveIcon from "@mui/icons-material/Remove";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import { useState } from "react";
 
 // Only user inputs live in state; the tip amount and total are derived from them on each render.
 const INITIAL_VALUE = {
   billAmount: 0,
   tipPercent: 18,
-  showGroup: false,
-  split: 1,
+  people: 1,
 };
+
+const MAX_PEOPLE = 20;
+
+// Round, comfortably tappable (44px) buttons for the People stepper.
+const stepperButtonSx = { width: 44, height: 44, border: 1, borderColor: "divider" };
 
 // Keep the current tip % when there's no bill to derive it from (avoids NaN/Infinity).
 function tipPercentFor(tipAmount: number, billAmount: number, fallback: number) {
@@ -95,10 +100,10 @@ const Main = () => {
     setTipAmount(value);
   }
 
-  function handleSplitChanged(_: Event, newValue: number) {
+  function changePeople(delta: number) {
     setBillValue((prev) => ({
       ...prev,
-      split: newValue,
+      people: Math.min(MAX_PEOPLE, Math.max(1, prev.people + delta)),
     }));
   }
 
@@ -187,67 +192,74 @@ const Main = () => {
       </div>
 
       {billValue.billAmount > 0 && (
-        <div className="flex flex-wrap mt-5 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Button
-            className=""
             variant="outlined"
-            size="small"
-            aria-label="Round Down"
+            aria-label="Round down"
             onClick={roundDown}
             startIcon={<ArrowCircleDownIcon />}
           >
-            Round Down
+            Round down
           </Button>
           <Button
-            className=""
             variant="outlined"
-            aria-label="Round Up"
-            size="small"
+            aria-label="Round up"
             onClick={roundUp}
             startIcon={<ArrowCircleUpIcon />}
           >
-            Round Up
+            Round up
           </Button>
-          <IconButton
-            aria-label="Add person to split the bill"
-            color="secondary"
-            onClick={() =>
-              setBillValue((prev) => ({ ...prev, showGroup: !prev.showGroup }))
-            }
-          >
-            <GroupAddOutlinedIcon />
-          </IconButton>
-          <IconButton aria-label="Reset" color="primary" onClick={reset}>
-            <RestartAltIcon />
-          </IconButton>
         </div>
       )}
 
-      {/* Same condition as the buttons above, so the split can't be left open without its toggle. */}
-      {billValue.billAmount > 0 && billValue.showGroup && (
-        <>
-          <p className="label">Split: {billValue.split}</p>
-          <Slider
-            className="!p-0"
-            aria-label="Split"
-            id="split"
-            value={billValue.split}
-            min={1}
-            max={20}
-            step={1}
-            shiftStep={5}
-            valueLabelDisplay="auto"
-            onChange={handleSplitChanged}
-          />
-          <div>
-            <p className="label">
-              {splitBill(totalAmount, billValue.split).extra === 0
-                ? "Each Pays"
-                : "Shares"}
-            </p>
-            <p>{describeShares(totalAmount, billValue.split)}</p>
-          </div>
-        </>
+      {/* Always visible, so it's clear from the start that the app can split the bill. */}
+      <div className="flex items-center justify-between">
+        <p id="people-label">People</p>
+        <div role="group" aria-labelledby="people-label" className="flex items-center gap-3">
+          <IconButton
+            aria-label="Remove a person"
+            disabled={billValue.people <= 1}
+            onClick={() => changePeople(-1)}
+            sx={stepperButtonSx}
+          >
+            <RemoveIcon />
+          </IconButton>
+          <span
+            id="people"
+            aria-live="polite"
+            className="w-6 text-center text-xl tabular-nums"
+          >
+            {billValue.people}
+          </span>
+          <IconButton
+            aria-label="Add a person"
+            disabled={billValue.people >= MAX_PEOPLE}
+            onClick={() => changePeople(1)}
+            sx={stepperButtonSx}
+          >
+            <AddIcon />
+          </IconButton>
+        </div>
+      </div>
+
+      {billValue.billAmount > 0 && billValue.people > 1 && (
+        <div>
+          <p className="label">
+            {splitBill(totalAmount, billValue.people).extra === 0
+              ? "Each Pays"
+              : "Shares"}
+          </p>
+          <p>{describeShares(totalAmount, billValue.people)}</p>
+        </div>
+      )}
+
+      {billValue.billAmount > 0 && (
+        <div className="flex justify-end">
+          {/* The negative margin offsets the text button's padding so "Reset" lines up with the right edge. */}
+          <Button aria-label="Reset" onClick={reset} startIcon={<RestartAltIcon />} sx={{ mr: -1 }}>
+            Reset
+          </Button>
+        </div>
       )}
     </main>
   );

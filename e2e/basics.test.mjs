@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appTest, money, press, readApp, setBill, setTip, setup } from "./helpers.mjs";
+import { appTest, money, press, readApp, setBill, setPeople, setTip, setup } from "./helpers.mjs";
 
 const ctx = setup();
 
@@ -51,7 +51,7 @@ appTest(ctx, "typing a tip amount sets the matching tip %", async (page) => {
 
 appTest(ctx, "changing the bill after rounding keeps the rounded tip %", async (page) => {
   await setBill(page, "10.33");
-  await press(page, "Round Up");
+  await press(page, "Round up");
   let s = await readApp(page);
   assert.equal(s.total, "$13.00");
   assert.equal(s.pct, "Tip % (25.85%)");
@@ -63,13 +63,14 @@ appTest(ctx, "changing the bill after rounding keeps the rounded tip %", async (
 
 appTest(ctx, "Reset goes back to the starting values", async (page) => {
   await setBill(page, "50");
-  await press(page, "Add person to split the bill");
+  await setPeople(page, 3);
   await press(page, "Reset");
   const s = await readApp(page);
   assert.equal(s.bill, "0");
   assert.equal(s.pct, "Tip % (18.00%)");
   assert.equal(s.total, "$0.00");
-  assert.equal(s.split, null);
+  assert.equal(s.people, "1");
+  assert.equal(s.shares, null);
 });
 
 appTest(ctx, "bill + tip always equals the total to the cent", async (page) => {
@@ -82,10 +83,10 @@ appTest(ctx, "bill + tip always equals the total to the cent", async (page) => {
       const s = await readApp(page);
       if (Math.round((+s.bill + +s.tip) * 100) !== Math.round(money(s.total) * 100)) mismatches.push(s);
     }
-    await press(page, "Round Up");
+    await press(page, "Round up");
     const s = await readApp(page);
     if (!Number.isInteger(money(s.total)) || Math.round((+s.bill + +s.tip) * 100) !== Math.round(money(s.total) * 100)) {
-      mismatches.push({ after: "Round Up", ...s });
+      mismatches.push({ after: "Round up", ...s });
     }
     await press(page, "Reset");
   }
@@ -94,11 +95,19 @@ appTest(ctx, "bill + tip always equals the total to the cent", async (page) => {
 
 appTest(
   ctx,
-  "fits a 390px phone screen without horizontal scrolling",
+  "fits a 390px phone screen: no horizontal scrolling, round buttons on one line, 44px stepper",
   async (page) => {
     await setBill(page, "84.37");
-    await press(page, "Add person to split the bill");
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    await setPeople(page, 3);
+    const layout = await page.evaluate(() => {
+      const box = (label) => document.querySelector(`[aria-label="${label}"]`).getBoundingClientRect();
+      return {
+        overflow: document.documentElement.scrollWidth > window.innerWidth,
+        roundButtonsOnOneLine: box("Round down").top === box("Round up").top,
+        stepperButtonHeights: [box("Remove a person").height, box("Add a person").height],
+      };
+    });
+    assert.deepEqual(layout, { overflow: false, roundButtonsOnOneLine: true, stepperButtonHeights: [44, 44] });
   },
   { width: 390, height: 844, isMobile: true, hasTouch: true },
 );

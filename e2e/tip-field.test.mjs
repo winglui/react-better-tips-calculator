@@ -57,7 +57,7 @@ appTest(ctx, "Round Up and the slider still update the tip field after editing",
   await page.click("#tipAmount");
   await page.keyboard.type("20");
   await page.click("#billAmount");
-  await press(page, "Round Up");
+  await press(page, "Round up");
   let s = await readApp(page);
   assert.equal(s.tip, "21.00");
   assert.equal(s.total, "$121.00");
