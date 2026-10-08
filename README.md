@@ -2,7 +2,7 @@
 
 A simple tip calculator. Type the bill amount and it instantly works out the tip and the total. You can round the total to a whole dollar and split the bill so everyone's share adds up to the exact cent.
 
-**Version 1.0.0**
+**Version 1.1.0**
 
 ## Features
 
