@@ -1,4 +1,10 @@
-import { Button, IconButton, Slider, TextField } from "@mui/material";
+import {
+  Button,
+  IconButton,
+  InputAdornment,
+  Slider,
+  TextField,
+} from "@mui/material";
 import ArrowCircleUpIcon from "@mui/icons-material/ArrowCircleUp";
 import ArrowCircleDownIcon from "@mui/icons-material/ArrowCircleDown";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -22,6 +28,31 @@ function tipPercentFor(tipAmount: number, billAmount: number, fallback: number) 
 // Snap to cents so float noise (e.g. 50 * 1.18 = 59.00000000000001) still counts as a whole number.
 function toCents(amount: number) {
   return Math.round(amount * 100) / 100;
+}
+
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+function formatMoney(amount: number) {
+  return currency.format(amount);
+}
+
+// "$" shown in front of the money input fields; the input value itself stays a plain number.
+const moneySlotProps = {
+  input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+};
+
+// Split a total into shares that add up exactly: `extra` people pay 1¢ more than `base`.
+function splitBill(total: number, people: number) {
+  const cents = Math.round(total * 100);
+  const base = Math.floor(cents / people);
+  return { base: base / 100, extra: cents % people };
+}
+
+function describeShares(total: number, people: number) {
+  const { base, extra } = splitBill(total, people);
+  if (extra === 0) return formatMoney(base);
+  const group = (count: number, amount: number) =>
+    `${count} ${count === 1 ? "pays" : "pay"} ${formatMoney(amount)}`;
+  return `${group(extra, base + 0.01)}, ${group(people - extra, base)}`;
 }
 
 const Main = () => {
@@ -125,6 +156,7 @@ const Main = () => {
         variant="standard"
         type="number"
         value={billValue.billAmount}
+        slotProps={moneySlotProps}
         onFocus={handleOnBillAmountFocus}
         onChange={handleBillAmountChanged}
       />
@@ -150,13 +182,14 @@ const Main = () => {
         label="Tip Amount"
         variant="standard"
         value={tipText ?? billValue.tipAmount.toFixed(2)}
+        slotProps={moneySlotProps}
         onFocus={handleOnTipAmountFocus}
         onBlur={() => setTipText(null)}
         onChange={handleTipAmountChanged}
       />
       <div>
         <p className="label">Total Amount</p>
-        <p>{billValue.totalAmount.toFixed(2)}</p>
+        <p>{formatMoney(billValue.totalAmount)}</p>
       </div>
 
       {billValue.billAmount > 0 && (
@@ -212,8 +245,12 @@ const Main = () => {
             onChange={handleSplitChanged}
           />
           <div>
-            <p className="label">Each Pays</p>
-            <p>{(billValue.totalAmount / billValue.split).toFixed(2)}</p>
+            <p className="label">
+              {splitBill(billValue.totalAmount, billValue.split).extra === 0
+                ? "Each Pays"
+                : "Shares"}
+            </p>
+            <p>{describeShares(billValue.totalAmount, billValue.split)}</p>
           </div>
         </>
       )}
