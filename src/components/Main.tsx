@@ -19,6 +19,11 @@ function tipPercentFor(tipAmount: number, billAmount: number, fallback: number) 
   return billAmount > 0 ? (tipAmount / billAmount) * 100 : fallback;
 }
 
+// Snap to cents so float noise (e.g. 50 * 1.18 = 59.00000000000001) still counts as a whole number.
+function toCents(amount: number) {
+  return Math.round(amount * 100) / 100;
+}
+
 const Main = () => {
   const [billValue, setBillValue] = useState(() => INITIAL_VALUE);
 
@@ -65,19 +70,23 @@ const Main = () => {
     }));
   }
 
+  // Round to the nearest whole dollar; if the total is already whole, step $1 instead.
   function roundDown() {
-    const newTotalAmount = Math.floor(billValue.totalAmount);
-    round(newTotalAmount);
+    const total = toCents(billValue.totalAmount);
+    const newTotalAmount = Number.isInteger(total) ? total - 1 : Math.floor(total);
+    // Never round below the bill (that would make the tip negative).
+    if (newTotalAmount >= billValue.billAmount) {
+      round(newTotalAmount);
+    }
   }
 
   function roundUp() {
-    const newTotalAmount = Math.ceil(billValue.totalAmount);
-    round(newTotalAmount);
+    const total = toCents(billValue.totalAmount);
+    round(Number.isInteger(total) ? total + 1 : Math.ceil(total));
   }
 
   function round(newTotalAmount: number) {
-    const newTipAmount =
-      billValue.tipAmount - (billValue.totalAmount - newTotalAmount);
+    const newTipAmount = toCents(newTotalAmount - billValue.billAmount);
     setBillValue((prev) => ({
       ...prev,
       tipPercent: tipPercentFor(newTipAmount, prev.billAmount, prev.tipPercent),
