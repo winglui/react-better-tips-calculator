@@ -223,7 +223,8 @@ const Main = () => {
         </div>
       )}
 
-      {billValue.showGroup && (
+      {/* Same condition as the buttons above, so the split can't be left open without its toggle. */}
+      {billValue.billAmount > 0 && billValue.showGroup && (
         <>
           <p className="label">Split: {billValue.split}</p>
           <Slider

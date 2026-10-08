@@ -46,6 +46,33 @@ appTest(ctx, "the split can't go below 1 person", async (page) => {
   assert.equal((await readApp(page)).shares, "$118.00");
 });
 
+appTest(ctx, "the split toggle opens and closes the split section", async (page) => {
+  await setBill(page, "50");
+  await press(page, "Add person to split the bill");
+  assert.equal((await readApp(page)).split, "Split: 1");
+  await press(page, "Add person to split the bill");
+  assert.equal((await readApp(page)).split, null);
+});
+
+appTest(ctx, "clearing the bill hides the split section instead of leaving it stuck open", async (page) => {
+  await setBill(page, "50");
+  await setSplit(page, 3);
+  await setBill(page, "0");
+  const s = await readApp(page);
+  assert.equal(s.buttons, false);
+  assert.equal(s.split, null, "split section should be hidden when there's no bill");
+});
+
+appTest(ctx, "entering a bill again brings the split back with the same number of people", async (page) => {
+  await setBill(page, "50");
+  await setSplit(page, 3);
+  await setBill(page, "0");
+  await setBill(page, "60");
+  const s = await readApp(page);
+  assert.equal(s.split, "Split: 3");
+  assert.equal(s.shares, "$23.60"); // $70.80 / 3
+});
+
 appTest(ctx, "rounding updates the split", async (page) => {
   await setBill(page, "50");
   await setSplit(page, 3);
