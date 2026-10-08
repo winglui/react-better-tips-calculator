@@ -34,6 +34,16 @@ function formatMoney(amount: number) {
   return currency.format(amount);
 }
 
+// Money can't be negative: pasted or scrolled values below zero become 0.
+function nonNegative(value: string) {
+  return Math.max(0, +value);
+}
+
+// Stop "-" from being typed into the money fields.
+function blockMinus(e: React.KeyboardEvent) {
+  if (e.key === "-") e.preventDefault();
+}
+
 // "$" shown in front of the money input fields; the input value itself stays a plain number.
 const moneySlotProps = {
   input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
@@ -64,7 +74,7 @@ const Main = () => {
   const totalAmount = toCents(billValue.billAmount + tipAmount);
 
   function handleBillAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
-    setBillValue((prev) => ({ ...prev, billAmount: +e.target.value }));
+    setBillValue((prev) => ({ ...prev, billAmount: nonNegative(e.target.value) }));
   }
 
   function handleTipPercentChanged(_: Event, newValue: number) {
@@ -80,8 +90,9 @@ const Main = () => {
   }
 
   function handleTipAmountChanged(e: React.ChangeEvent<HTMLInputElement>) {
-    setTipText(e.target.value);
-    setTipAmount(+e.target.value);
+    const value = nonNegative(e.target.value);
+    setTipText(value === +e.target.value ? e.target.value : String(value));
+    setTipAmount(value);
   }
 
   function handleSplitChanged(_: Event, newValue: number) {
@@ -139,6 +150,7 @@ const Main = () => {
         value={billValue.billAmount}
         slotProps={moneySlotProps}
         onFocus={handleOnBillAmountFocus}
+        onKeyDown={blockMinus}
         onChange={handleBillAmountChanged}
       />
 
@@ -165,6 +177,7 @@ const Main = () => {
         value={tipText ?? tipAmount.toFixed(2)}
         slotProps={moneySlotProps}
         onFocus={handleOnTipAmountFocus}
+        onKeyDown={blockMinus}
         onBlur={() => setTipText(null)}
         onChange={handleTipAmountChanged}
       />
